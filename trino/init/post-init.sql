@@ -1,0 +1,1 @@
+CREATE SCHEMA jaffle_shop_db.jaffle_shop_sc WITH (location = 's3://warehouse/jaffle_shop_tables');
