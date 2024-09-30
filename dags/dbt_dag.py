@@ -24,17 +24,17 @@ with DAG(
 
     dbt_debug = BashOperator(
         task_id='dbt_debug_task',
-        bash_command='cd /home/cagri/project/test-dbt2-demo/jaffle_shop && dbt debug',
+        bash_command='cd /home/cagri/project/test-dbt2-demo/jaffle_shop && dbt debug --profile jaffle_shop_iceberg',
     )
 
     dbt_run = BashOperator(
         task_id='dbt_run_task',
-        bash_command='cd /home/cagri/project/test-dbt2-demo/jaffle_shop && dbt run',
+        bash_command='cd /home/cagri/project/test-dbt2-demo/jaffle_shop && dbt run --profile jaffle_shop_iceberg',
     )
 
     dbt_test = BashOperator(
         task_id='dbt_test_task',
-        bash_command='cd /home/cagri/project/test-dbt2-demo/jaffle_shop && dbt test',
+        bash_command='cd /home/cagri/project/test-dbt2-demo/jaffle_shop && dbt test --profile jaffle_shop_iceberg',
     )
 
     airflow_end = BashOperator(
