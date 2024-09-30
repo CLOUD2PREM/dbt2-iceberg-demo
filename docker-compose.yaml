@@ -1,0 +1,93 @@
+services:
+  trino:
+    container_name: trino
+    hostname: trino
+    image: trinodb/trino:457
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./trino/config/config.properties:/etc/trino/config.properties:ro
+      - ./trino/config/jvm.config:/etc/trino/jvm.config:ro
+      - ./trino/catalog/jaffle_shop_db.properties:/etc/trino/catalog/jaffle_shop_db.properties:ro
+      - ./trino/init/post-init.sh:/tmp/post-init.sh
+      - ./trino/init/post-init.sql:/tmp/post-init.sql
+    networks:
+      dahbest:
+        ipv4_address: 172.80.0.80
+    environment:
+      - TRINO_MEMORY_HEAP_HEADROOM_PER_NODE=2048MB
+    restart: always
+    command:
+      - /tmp/post-init.sh
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: cagri
+      POSTGRES_PASSWORD: 3541
+      POSTGRES_DB: airflow_db
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres/postgres_data:/var/lib/postgresql/data
+      - ./postgres/query_init/test.sql:/docker-entrypoint-initdb.d/test.sql:ro
+    restart: always
+    networks:
+      dahbest:
+        ipv4_address: 172.80.0.10
+
+  catalog:
+    image: projectnessie/nessie
+    container_name: catalog
+    networks:
+      dahbest:
+    ports:
+      - 19120:19120
+
+  storage:
+    image: minio/minio
+    container_name: storage
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_DOMAIN=storage
+      - MINIO_REGION_NAME=us-east-1
+      - MINIO_REGION=us-east-1
+    networks:
+      dahbest:
+    volumes:
+      - ./minio/minio_data:/data
+    ports:
+      - 9001:9001
+      - 9000:9000
+    command: ["server", "/data", "--console-address", ":9001"]
+
+  mc:
+    depends_on:
+      - storage
+    image: minio/mc
+    container_name: mc
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc config host add minio http://storage:9000 admin password) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio/warehouse;
+      /usr/bin/mc mb minio/warehouse;
+      /usr/bin/mc mb minio/iceberg;
+      /usr/bin/mc policy set public minio/warehouse;
+      /usr/bin/mc policy set public minio/iceberg;
+      tail -f /dev/null
+      " 
+    networks:
+      dahbest:
+        aliases:
+          - minio.storage
+
+networks:
+  dahbest:
+    external: true
