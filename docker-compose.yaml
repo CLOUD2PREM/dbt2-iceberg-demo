@@ -4,11 +4,12 @@ services:
     hostname: trino
     image: trinodb/trino:457
     ports:
-      - '9090:9090'
+      - '8080:8080'
     volumes:
       - ./trino/config/config.properties:/etc/trino/config.properties:ro
       - ./trino/config/jvm.config:/etc/trino/jvm.config:ro
-      - ./trino/catalog/jaffle_shop_db.properties:/etc/trino/catalog/jaffle_shop_db.properties:ro
+      - ./trino/catalog/jaffle_shop_iceberg.properties:/etc/trino/catalog/jaffle_shop_iceberg.properties:ro
+      - ./trino/catalog/jaffle_shop_postgres.properties:/etc/trino/catalog/jaffle_shop_postgres.properties:ro
       - ./trino/init/post-init.sh:/tmp/post-init.sh
       - ./trino/init/post-init.sql:/tmp/post-init.sql
     networks:
@@ -31,7 +32,8 @@ services:
       - 5432:5432
     volumes:
       - ./postgres/postgres_data:/var/lib/postgresql/data
-      - ./postgres/query_init/test.sql:/docker-entrypoint-initdb.d/test.sql:ro
+      - ./postgres/query_init/jaffle_shop_postgres.sql:/docker-entrypoint-initdb.d/jaffle_shop_postgres.sql:ro
+      - ./postgres/query_init/jaffle_shop_sc.sql:/docker-entrypoint-initdb.d/jaffle_shop_sc.sql:ro
     restart: always
     networks:
       dahbest:

@@ -1,1 +1,0 @@
-CREATE DATABASE jaffle_shop_db;

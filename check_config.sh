@@ -34,7 +34,16 @@ fi
 
 echo ".........."
 
-FILE="dags/dbt_dag.py"
+FILE="dags"
+if [ -f "$FILE" ]; then
+    echo "✅ $FILE file exists."
+else
+    echo "⚠️ $FILE file does not exist! ⚠️"
+fi
+
+echo ".........."
+
+FILE="minio/minio_data"
 if [ -f "$FILE" ]; then
     echo "✅ $FILE file exists."
 else
@@ -47,6 +56,14 @@ read -p "Delete PostgreSQL data: (y/n): " clean_volume
 if [ "$clean_volume" == "y" ]; then
     sudo rm -rf postgres/postgresql_data/*
     echo "✅ PostgreSQL volume cleaned."
+fi
+
+echo ".........."
+
+read -p "Delete Minio data: (y/n): " clean_volume
+if [ "$clean_volume" == "y" ]; then
+    sudo rm -rf minio/minio_data/*
+    echo "✅ Minio volume cleaned."
 fi
 
 echo ".........."
