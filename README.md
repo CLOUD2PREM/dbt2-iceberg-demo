@@ -39,17 +39,24 @@ All other configurations are already in place.
 If you get any error: you can run `check_config.sh`
 
 # 🛠️ Environment Setup
-
 ### System and Software Versions
-- **WSL**: Ubuntu 24.04 (Distro 2)
-- **Docker**: `Docker version 27.2.0, build 3ab4256`
-- **Docker Compose**: `v2.29.2-desktop.2`
-- **Postgres**: `postgres:16` (Postgres 16)
-- **Trino**: `trinodb/trino:457` (Trino CLI 457)
-- **Iceberg**: `iceberg:1.6.1`
-- **Python**: `3.10.12`
-- **Airflow**: `2.10.1`
-  
+
+| Software         | Description                                    | Version                             |
+|------------------|------------------------------------------------|-------------------------------------|
+| **WSL**          | Windows Subsystem for Linux environment         | Ubuntu 24.04 (Distro 2)             |
+| **Docker**       | Containerization platform                      | Docker version 27.2.0               |
+| **Docker Compose**| Tool for defining and running multi-container Docker applications | v2.29.2-desktop.2 |
+| **Postgres**     | Open-source relational database                 | postgres:16                         |
+| **Trino**        | Distributed SQL query engine                    | trino:457                           |
+| **Iceberg**      | High-performance table format for big data      | 1.6.1                               |
+| **Python**       | Programming language                           | 3.10.12                             |
+| **Airflow**      | Workflow automation and scheduling tool         | 2.10.1                              |
+| **Mariadb**      | Open-source relational database                 | 10.5.8                              |
+| **Minio**        | Object storage server compatible with AWS S3    | RELEASE.2023-08-23T10-07-06Z        |
+| **HADOOP**       | Framework for distributed storage and processing| 3.2.0                               |
+| **METASTORE**    | Metadata management service for Hive            | 3.1.3                               |
+| **DBT**          | Data build tool for transforming data in the warehouse | 1.8.7                          |
+
 ### Python Environment Setup
 ```bash
 python3.10 -m venv dbt_env
@@ -74,15 +81,14 @@ dbt --version
 If you want to change your Iceberg connection information, please check the docker-compose.yaml and trino ==> catalog ==> jaffle_shop_db.properties files.
 ```plaintext
 connector.name=iceberg
-iceberg.catalog.type=nessie
-iceberg.nessie-catalog.uri=http://catalog:19120/api/v1
-iceberg.nessie-catalog.default-warehouse-dir=s3://warehouse
-fs.native-s3.enabled=true
-s3.endpoint=http://storage:9000
-s3.region=us-east-1
-s3.path-style-access=true
-s3.aws-access-key=admin
-s3.aws-secret-key=password
+iceberg.catalog.type=hive_metastore
+hive.metastore.uri=thrift://hive-metastore:9083
+hive.metastore.authentication.type=NONE
+hive.s3.path-style-access=true
+hive.s3.endpoint=http://minio:9000
+hive.s3.region=us-east-1
+hive.s3.aws-access-key=cTI5BM9ecjv6qISgGaHP
+hive.s3.aws-secret-key=gJslk7jC1IJqOpDAVoV0fPXFS0WKDcSX9zBGd3f1
 ```
 
 # 🐳 Container Setup:

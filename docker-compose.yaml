@@ -10,26 +10,24 @@ services:
       - ./trino/config/jvm.config:/etc/trino/jvm.config:ro
       - ./trino/catalog/jaffle_shop_iceberg.properties:/etc/trino/catalog/jaffle_shop_iceberg.properties:ro
       - ./trino/catalog/jaffle_shop_postgres.properties:/etc/trino/catalog/jaffle_shop_postgres.properties:ro
-      - ./trino/init/post-init.sh:/tmp/post-init.sh
-      - ./trino/init/post-init.sql:/tmp/post-init.sql
+      - ./trino/logs:/var/log/trino  
     networks:
       dahbest:
         ipv4_address: 172.80.0.80
     environment:
-      - TRINO_MEMORY_HEAP_HEADROOM_PER_NODE=2048MB
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
     restart: always
-    command:
-      - /tmp/post-init.sh
 
   postgres:
     image: postgres:16
     container_name: postgres
     environment:
-      POSTGRES_USER: cagri
-      POSTGRES_PASSWORD: 3541
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: airflow_db
     ports:
-      - 5432:5432
+      - '5432:5432'
     volumes:
       - ./postgres/postgres_data:/var/lib/postgresql/data
       - ./postgres/query_init/jaffle_shop_postgres.sql:/docker-entrypoint-initdb.d/jaffle_shop_postgres.sql:ro
@@ -39,56 +37,131 @@ services:
       dahbest:
         ipv4_address: 172.80.0.10
 
-  catalog:
-    image: projectnessie/nessie
-    container_name: catalog
-    networks:
-      dahbest:
+  mariadb:
+    hostname: mariadb
+    container_name: mariadb
+    image: mariadb:10.5.8
     ports:
-      - 19120:19120
-
-  storage:
-    image: minio/minio
-    container_name: storage
+      - 3306:3306
+    volumes:
+      - ./mariadb/mariadb_data:/var/lib/mysql
     environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=password
-      - MINIO_DOMAIN=storage
-      - MINIO_REGION_NAME=us-east-1
-      - MINIO_REGION=us-east-1
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASSWORD
+      MYSQL_DATABASE: metastore_db
     networks:
-      dahbest:
+      - dahbest
+
+  hive-metastore:
+    build: hive-metastore/
+    hostname: hive-metastore
+    container_name: hive-metastore
+    image: hive-metastore:3.1.3
+    ports:
+      - 9083:9083
+    volumes:
+      - ./hive-metastore/conf/metastore-site.xml:/opt/apache-hive-metastore-3.1.3-bin/conf/metastore-site.xml:ro
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    environment:
+      METASTORE_DB_HOSTNAME: mariadb
+      METASTORE_TYPE: mysql
+    depends_on:
+      - mariadb
+    networks:
+      - dahbest
+
+  minio:
+    hostname: minio
+    container_name: minio
+    build:
+      context: ./minio
+      dockerfile: Dockerfile
+    ports:
+      - 9000:9000
+      - 9001:9001
     volumes:
       - ./minio/minio_data:/data
-    ports:
-      - 9001:9001
-      - 9000:9000
-    command: ["server", "/data", "--console-address", ":9001"]
-
-  mc:
-    depends_on:
-      - storage
-    image: minio/mc
-    container_name: mc
     environment:
-      - AWS_ACCESS_KEY_ID=admin
-      - AWS_SECRET_ACCESS_KEY=password
-      - AWS_REGION=us-east-1
-      - AWS_DEFAULT_REGION=us-east-1
-    entrypoint: >
-      /bin/sh -c "
-      until (/usr/bin/mc config host add minio http://storage:9000 admin password) do echo '...waiting...' && sleep 1; done;
-      /usr/bin/mc rm -r --force minio/warehouse;
-      /usr/bin/mc mb minio/warehouse;
-      /usr/bin/mc mb minio/iceberg;
-      /usr/bin/mc policy set public minio/warehouse;
-      /usr/bin/mc policy set public minio/iceberg;
-      tail -f /dev/null
-      " 
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_USER_PASSWORD}
+      MINIO_DOMAIN: minio 
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID} 
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY} 
+      AWS_REGION: ${AWS_REGION}
+    command: server --console-address ":9001" /data
     networks:
       dahbest:
         aliases:
-          - minio.storage
+          - minio
+        ipv4_address: 172.80.0.25
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  airflow-scheduler:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile.Scheduler
+    container_name: airflow-scheduler
+    environment:
+      AIRFLOW_DATABASE_USERNAME: ${AIRFLOW_DATABASE_USERNAME}
+      AIRFLOW_DATABASE_PASSWORD: ${AIRFLOW_DATABASE_PASSWORD}
+      AIRFLOW_DATABASE_NAME: airflow_db
+      AIRFLOW_DATABASE_HOST: 172.80.0.10
+      AIRFLOW_DATABASE_PORT_NUMBER: 5432
+      AIRFLOW_EXECUTOR: LocalExecutor
+      AIRFLOW_WEBSERVER_HOST: airflow 
+      AIRFLOW_WEBSERVER_PORT_NUMBER: 9090
+      DBT_PROFILES_DIR: /opt/dbt
+    volumes:
+      - ./airflow/dags:/opt/bitnami/airflow/dags
+      - ./airflow/logs:/opt/bitnami/airflow/logs
+      - ./dbt/jaffle_shop:/opt/dbt/dbt_project
+      - ./dbt/profiles.yml:/opt/dbt/profiles.yml
+    depends_on:
+      - postgres
+      - airflow
+    networks: 
+      dahbest:
+        aliases:
+          - airflow-scheduler
+
+  airflow:
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile.Webserver
+    container_name: airflow
+    environment:
+      AIRFLOW_DATABASE_USERNAME: ${AIRFLOW_DATABASE_USERNAME}
+      AIRFLOW_DATABASE_PASSWORD: ${AIRFLOW_DATABASE_PASSWORD}
+      AIRFLOW_DATABASE_NAME: airflow_db
+      AIRFLOW_DATABASE_HOST: 172.80.0.10
+      AIRFLOW_DATABASE_PORT_NUMBER: 5432
+      AIRFLOW_EXECUTOR: LocalExecutor
+      AIRFLOW_USERNAME: ${AIRFLOW_USERNAME}
+      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD}
+      AIRFLOW_EMAIL: ${AIRFLOW_EMAIL}
+      AIRFLOW_WEBSERVER_PORT_NUMBER: 9090
+      DBT_PROFILES_DIR: /opt
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./airflow/dags:/opt/bitnami/airflow/dags
+      - ./airflow/logs:/opt/bitnami/airflow/logs
+      - ./dbt:/opt/dbt
+      - ~/.dbt/profiles.yml:/opt/profiles.yml
+    depends_on:
+      - postgres
+    networks: 
+      dahbest:
+        aliases:
+          - airflow
 
 networks:
   dahbest:

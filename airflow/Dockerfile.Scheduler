@@ -1,0 +1,23 @@
+FROM bitnami/airflow-scheduler:latest
+
+USER root
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    python3-dev
+
+RUN pip install --no-cache-dir dbt-core dbt-postgres dbt-trino
+
+RUN mkdir -p /home/airflow && chown 1001:1001 /home/airflow
+
+ENV PATH="/home/airflow/.local/bin:${PATH}"
+
+RUN dbt --version
+
+RUN touch /home/airflow/.bashrc && \
+    echo 'export PATH=$PATH:/home/airflow/.local/bin' >> /home/airflow/.bashrc && \
+    chown 1001:1001 /home/airflow/.bashrc
+
+USER 1001
+
+WORKDIR /home/airflow/opt/dbt_project
