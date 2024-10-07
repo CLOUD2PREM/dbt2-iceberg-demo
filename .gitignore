@@ -1,0 +1,17 @@
+# Ignore Python bytecode and cache
+**/__pycache__
+
+# Ignore Airflow logs
+/airflow/logs/*
+
+# Ignore MinIO data
+/minio/minio_data/*
+
+# Ignore PostgreSQL data
+/postgres/postgres_data/*
+
+# Ignore MariaDB data
+/mariadb/mariadb_data/*
+
+# Ignore Trino logs
+/trino/logs/*

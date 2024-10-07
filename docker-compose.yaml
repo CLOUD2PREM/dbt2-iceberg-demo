@@ -148,14 +148,14 @@ services:
       AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD}
       AIRFLOW_EMAIL: ${AIRFLOW_EMAIL}
       AIRFLOW_WEBSERVER_PORT_NUMBER: 9090
-      DBT_PROFILES_DIR: /opt
+      DBT_PROFILES_DIR: /opt/dbt
     ports:
       - '9090:9090'
     volumes:
       - ./airflow/dags:/opt/bitnami/airflow/dags
       - ./airflow/logs:/opt/bitnami/airflow/logs
       - ./dbt:/opt/dbt
-      - ~/.dbt/profiles.yml:/opt/profiles.yml
+      - ./dbt/profiles.yml:/opt/dbt/profiles.yml
     depends_on:
       - postgres
     networks: 
