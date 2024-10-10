@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: jaffle_shop_iceberg
+    schema: jaffle_shop_sc
+    tables:
+      - name: clean_customers
+      - name: clean_orders
+      - name: clean_payments
+
+models:
+  - name: status_count
+    description: This table contains information about the order status, including teams and status counts.
+
+    columns:
+      - name: teams
+        description: Team number based on row partitioning of customers
+        tests:
+          - not_null
+          - unique
+
+      - name: status
+        description: Status of the order (e.g., placed, shipped, etc.)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+
+      - name: status_count
+        description: Count of the occurrences of each status in the respective team
+        tests:
+          - not_null

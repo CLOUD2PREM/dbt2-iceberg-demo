@@ -3,7 +3,7 @@ Iceberg with Postgres Seamless Data Integration
 
 This project creates a data pipeline. It uses Airflow to manage ETL processes between different databases through Trino. The pipeline also uses MinIO as storage for Apache Iceberg and PostgreSQL for handling database tasks. Airflow helps by automating and scheduling the workflows. MariaDB works as the backend for the Hive Metastore. The Hive Metastore organizes and manages Iceberg tables. This makes it easy to manage and access the data. Additionally, dbt is used to add raw data into PostgreSQL. It uses the dbt seed command to load CSV files. This makes it easy to put raw data into PostgreSQL, which is then transformed and connected to Iceberg for better data analysis. The documentation also includes details about the software versions and tools used in the project.
 
-![image](https://github.com/user-attachments/assets/b56dfcc5-2a0e-47fa-a3c2-84ae7358222d)
+![image](https://github.com/user-attachments/assets/02ff6958-7487-44a8-b26f-cb1ca5bda630)
 
 # 🛠️ Environment Setup
 ### System and Software Versions
@@ -42,7 +42,12 @@ docker network create --subnet=172.80.0.0/16 dahbest
 You can change your container username and password in .ENV file.
 ```
 
-4. Start the containers.
+4. ⚠️ Grant permission to the Airflow logs folder:
+```plaintext
+sudo chmod 777 -R airflow
+```
+
+5. Start the containers.
 ```plaintext
 docker-compose up -d --build
 ```
@@ -197,7 +202,7 @@ We'll create six tables for our ETL pipeline because we have three raw datasets.
         """,
     )
   ```
-  2. **Iceberg Tables**: The SQL queries for Iceberg tables require additional settings for Iceberg, including the storage format (PARQUET) and the location on S3 (WITH (location = 's3a://lakehouse/jaffle_shop_sc')). While Iceberg supports both Avro and Parquet formats, Parquet is recommended due to its robust community support.
+  2. **Iceberg Tables**: The SQL queries for Iceberg tables require additional settings for Iceberg, including the storage format (PARQUET) and the location on S3 `WITH (location = 's3a://lakehouse/jaffle_shop_sc')`. While Iceberg supports both Avro and Parquet formats, Parquet is recommended due to its robust community support.
   ```plaintext
     create_clean_iceberg_customers = SQLExecuteQueryOperator(
         task_id='create_iceberg_customers_table',
@@ -349,7 +354,7 @@ In this part, we move data from Iceberg tables back into Postgres. This step is 
         """,
     )
 ```
-### 5. Optimization for Dummy Node for Airflow Dag (192-196)
+### 5. Optimization for Dummy Node for Airflow Dag (192-196 Lines)
 To manage task dependencies, DummyOperator can be used to link multiple tasks, ensuring they run in sequence or in parallel, while keeping the DAG structure clean and organized.
 ```plaintext
 connect_node_1 = DummyOperator(task_id='connect_empty_node_1')
@@ -359,7 +364,7 @@ connect_node_4 = DummyOperator(task_id='connect_empty_node_4')
 connect_node_5 = DummyOperator(task_id='connect_empty_node_5')
 ```
 
-### 6. Linked Tasks in The Airflow (198-203)
+### 6. Linked Tasks in The Airflow (198-203 Lines)
 At the end of the DAG, tasks are linked to define the execution order, ensuring that the appropriate tasks run first.
 ```plaintext
 [create_schema_iceberg, create_schema_postgres] >> connect_node_1
@@ -369,3 +374,28 @@ connect_node_3 >> [dbt_insert_raw_data_to_postgres_table, dbt_insert_raw_data_to
 connect_node_4 >> [iceberg_to_postgres_customers, iceberg_to_postgres_orders, iceberg_to_postgres_payments] >> connect_node_5
 connect_node_5 >> [postgres_to_iceberg_customers, postgres_to_iceberg_orders, postgres_to_iceberg_payments]
 ```
+
+## Project Conclusion and Data Flow Overview
+This project implements a seamless data pipeline across multiple environments. Airflow orchestrates the ETL processes, managing task dependencies and scheduling workflows. Trino serves as the query engine, moving data between Postgres (for structured, transactional tasks) and Apache Iceberg (for high-performance analytics and long-term storage in a lakehouse, backed by MinIO for object storage).
+
+MariaDB supports the Hive Metastore, organizing Iceberg tables. We use dbt to initiate the ELT flow, seeding raw data into both Postgres and Iceberg, preparing it for further transformations.
+
+This architecture integrates Airflow, Trino, Iceberg, Postgres, MinIO, and dbt into a robust pipeline that efficiently manages and processes structured and unstructured data.
+
+![full_dag](https://github.com/user-attachments/assets/6801c202-0f70-418d-b707-40e36be01e15)
+
+# References:
+Trino — Hive connector: https://trino.io/docs/current/connector/hive.html
+
+Trino — Postgres connector: https://trino.io/docs/current/connector/postgresql.html
+
+Trino — dbt connector: https://docs.getdbt.com/docs/core/connect-data-platform/trino-setup
+
+Airflow & Scheduler container ENV: https://hub.docker.com/r/bitnami/airflow & https://hub.docker.com/r/bitnami/airflow-scheduler
+
+Hive-Metastore: https://repo1.maven.org/maven2/org/apache/hive/hive-standalone-metastore/3.1.3/
+
+Trino-Minio Docker Setup: https://blog.min.io/minio-trino-kubernetes/
+
+# Authors
+`Can Sevilmis` & `M. Cagri AKTAS`

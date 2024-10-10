@@ -126,7 +126,7 @@ with DAG(
 
     dbt_insert_raw_data_to_iceberg_table = BashOperator(
         task_id='dbt_seed_raw',
-        bash_command='cd /opt/dbt/dbt_project && dbt seed --profile jaffle_shop_iceberg',
+        bash_command='cd /opt/dbt/jaffle_shop && dbt seed --profile jaffle_shop_iceberg',
         dag=dag,
     )
 

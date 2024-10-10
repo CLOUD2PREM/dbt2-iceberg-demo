@@ -127,12 +127,12 @@ with DAG(
 
     dbt_insert_raw_data_to_postgres_table = BashOperator(
         task_id='dbt_seed_raw_to_postgres',
-        bash_command='cd /opt/dbt/dbt_project && dbt seed --profile jaffle_shop_postgres',
+        bash_command='cd /opt/dbt/jaffle_shop && dbt seed --profile jaffle_shop_postgres',
     )
 
     dbt_insert_raw_data_to_iceberg_table = BashOperator(
         task_id='dbt_seed_raw_to_iceberg',
-        bash_command='cd /opt/dbt/dbt_project && dbt seed --profile jaffle_shop_iceberg',
+        bash_command='cd /opt/dbt/jaffle_shop && dbt seed --profile jaffle_shop_iceberg',
     )
 
     postgres_to_iceberg_customers = SQLExecuteQueryOperator(

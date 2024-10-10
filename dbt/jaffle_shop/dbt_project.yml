@@ -19,15 +19,3 @@ models:
   jaffle_shop:
     example:
       +materialized: table
-
-# Configuring seeds for Postgres and Iceberg
-seeds:
-  # For Postgres
-  jaffle_shop_postgres:
-    +schema: jaffle_shop_sc  # Seed will be loaded into this schema in Postgres
-
-  # For Iceberg (S3 lakehouse)
-  jaffle_shop_iceberg:
-    +schema: jaffle_shop_sc  # This will ensure the seed data goes to the correct schema in Iceberg
-    +location_root: "s3a://lakehouse/jaffle_shop_sc/raw_data"  # Specify the location for raw data in Iceberg
-    +file_format: 'parquet'  # Ensure data is stored in Parquet format for Iceberg

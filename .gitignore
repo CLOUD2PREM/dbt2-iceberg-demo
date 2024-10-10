@@ -1,5 +1,6 @@
 # Ignore Python bytecode and cache
 **/__pycache__
+__pycache__/
 
 # Ignore Airflow logs
 /airflow/logs/*

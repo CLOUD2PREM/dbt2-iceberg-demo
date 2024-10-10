@@ -122,8 +122,7 @@ services:
     volumes:
       - ./airflow/dags:/opt/bitnami/airflow/dags
       - ./airflow/logs:/opt/bitnami/airflow/logs
-      - ./dbt/jaffle_shop:/opt/dbt/dbt_project
-      - ./dbt/profiles.yml:/opt/dbt/profiles.yml
+      - ./dbt:/opt/dbt 
     depends_on:
       - postgres
       - airflow
@@ -155,7 +154,6 @@ services:
       - ./airflow/dags:/opt/bitnami/airflow/dags
       - ./airflow/logs:/opt/bitnami/airflow/logs
       - ./dbt:/opt/dbt
-      - ./dbt/profiles.yml:/opt/dbt/profiles.yml
     depends_on:
       - postgres
     networks: 
