@@ -42,9 +42,12 @@ docker network create --subnet=172.80.0.0/16 dahbest
 You can change your container username and password in .ENV file.
 ```
 
-4. ⚠️ Grant permission to the Airflow logs folder:
+4. ⚠️ Grant permission to the Airflow logs and DBT folder:
 ```plaintext
 sudo chmod 777 -R airflow
+sudo chmod 777 airflow/logs
+
+sudo chmod 777 -R dbt
 ```
 
 5. Start the containers.
