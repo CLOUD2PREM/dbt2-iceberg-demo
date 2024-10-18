@@ -44,10 +44,7 @@ You can change your container username and password in .ENV file.
 
 4. ⚠️ Grant permission to the Airflow logs and DBT folder:
 ```plaintext
-sudo chmod 777 -R airflow
-sudo chmod 777 airflow/logs
-
-sudo chmod 777 -R dbt
+sudo chmod 777 -R ../dbt2-iceberg-demo
 ```
 
 5. Start the containers.
