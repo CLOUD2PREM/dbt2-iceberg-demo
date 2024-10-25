@@ -10,7 +10,7 @@ This project creates a data pipeline. It uses Airflow to manage ETL processes be
 
 | Software         | Description                                    | Version                             | UI - Ports      |
 |------------------|------------------------------------------------|-------------------------------------|------------|
-| **WSL**          | Windows Subsystem for Linux environment         | Ubuntu 24.04 (Distro 2)             |            |
+| **WSL**          | Windows Subsystem for Linux environment         | Ubuntu 22.04 (Distro 2)             |            |
 | **Docker**       | Containerization platform                      | Docker version 27.2.0               |            |
 | **Docker Compose**| Tool for defining and running multi-container Docker applications | v2.29.2-desktop.2 |            |
 | **Postgres**     | Open-source relational database                 | postgres:16                         |            |
