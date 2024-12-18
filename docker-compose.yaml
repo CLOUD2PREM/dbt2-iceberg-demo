@@ -19,6 +19,23 @@ services:
       AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
     restart: always
 
+  dbt:
+    build:
+      context: ./dbt
+      dockerfile: Dockerfile
+    container_name: dbt
+    volumes:
+      - ./dbt/project:/dbt/project
+      - ./dbt/profiles:/dbt/profiles
+    ports:
+      - "2223:22"
+    depends_on:
+      - trino
+      - postgres
+    networks:
+      dahbest:
+        ipv4_address: 172.80.0.79
+
   postgres:
     image: postgres:16
     container_name: postgres
@@ -54,10 +71,11 @@ services:
       - dahbest
 
   hive-metastore:
-    build: hive-metastore/
-    hostname: hive-metastore
     container_name: hive-metastore
-    image: hive-metastore:3.1.3
+    build: 
+      context: ./hive-metastore
+      dockerfile: Dockerfile
+    hostname: hive-metastore
     ports:
       - 9083:9083
     volumes:
@@ -104,62 +122,23 @@ services:
       timeout: 20s
       retries: 3
 
-  airflow-scheduler:
-    build:
-      context: ./airflow
-      dockerfile: Dockerfile.Scheduler
-    container_name: airflow-scheduler
-    environment:
-      AIRFLOW_DATABASE_USERNAME: ${AIRFLOW_DATABASE_USERNAME}
-      AIRFLOW_DATABASE_PASSWORD: ${AIRFLOW_DATABASE_PASSWORD}
-      AIRFLOW_DATABASE_NAME: airflow_db
-      AIRFLOW_DATABASE_HOST: 172.80.0.10
-      AIRFLOW_DATABASE_PORT_NUMBER: 5432
-      AIRFLOW_EXECUTOR: LocalExecutor
-      AIRFLOW_WEBSERVER_HOST: airflow 
-      AIRFLOW_WEBSERVER_PORT_NUMBER: 9090
-      DBT_PROFILES_DIR: /opt/dbt
-    volumes:
-      - ./airflow/dags:/opt/bitnami/airflow/dags
-      - ./airflow/logs:/opt/bitnami/airflow/logs
-      - ./dbt:/opt/dbt 
-    depends_on:
-      - postgres
-      - airflow
-    networks: 
-      dahbest:
-        aliases:
-          - airflow-scheduler
-
   airflow:
+    container_name: airflow
     build:
       context: ./airflow
-      dockerfile: Dockerfile.Webserver
-    container_name: airflow
-    environment:
-      AIRFLOW_DATABASE_USERNAME: ${AIRFLOW_DATABASE_USERNAME}
-      AIRFLOW_DATABASE_PASSWORD: ${AIRFLOW_DATABASE_PASSWORD}
-      AIRFLOW_DATABASE_NAME: airflow_db
-      AIRFLOW_DATABASE_HOST: 172.80.0.10
-      AIRFLOW_DATABASE_PORT_NUMBER: 5432
-      AIRFLOW_EXECUTOR: LocalExecutor
-      AIRFLOW_USERNAME: ${AIRFLOW_USERNAME}
-      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD}
-      AIRFLOW_EMAIL: ${AIRFLOW_EMAIL}
-      AIRFLOW_WEBSERVER_PORT_NUMBER: 9090
-      DBT_PROFILES_DIR: /opt/dbt
+      dockerfile: Dockerfile
+      args:
+        AIRFLOW_VERSION: ${AIRFLOW_VERSION}
     ports:
-      - '9090:9090'
+      - "9090:9090"
     volumes:
-      - ./airflow/dags:/opt/bitnami/airflow/dags
-      - ./airflow/logs:/opt/bitnami/airflow/logs
-      - ./dbt:/opt/dbt
+      - ./airflow/logs:/root/airflow/logs
+      - ./airflow/dags:/root/airflow/dags
     depends_on:
       - postgres
-    networks: 
+    networks:
       dahbest:
-        aliases:
-          - airflow
+        ipv4_address: 172.80.0.11
 
 networks:
   dahbest:

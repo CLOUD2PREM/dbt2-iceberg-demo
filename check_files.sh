@@ -6,7 +6,7 @@ echo ".........."
 total_files=0
 existing_files=0
 
-FILES=("airflow/dags" "airflow/logs" "airflow/Dockerfile.Scheduler" "airflow/Dockerfile.Webserver")
+FILES=("airflow/dags" "airflow/logs" "airflow/Dockerfile" "airflow/scripts" "airflow/config")
 for FILE in "${FILES[@]}"
 do
     total_files=$((total_files + 1))
@@ -82,6 +82,20 @@ do
         existing_files=$((existing_files + 1))
     else
         echo "⚠️ $TRINO_FILES does not exist! Please check the GitHub repo: https://github.com/CLOUD2PREM/dbt2-iceberg-demo ⚠️"
+    fi
+done
+
+echo ".........."
+
+DBT_FILES=("dbt/profiles" "dbt/project" "dbt/scripts" "dbt/Dockerfile")
+for DBT_FILES in "${DBT_FILES[@]}"
+do
+    total_files=$((total_files + 1))
+    if [ -f "$DBT_FILES" ] || [ -d "$DBT_FILES" ]; then
+        echo "✅ $DBT_FILES exists."
+        existing_files=$((existing_files + 1))
+    else
+        echo "⚠️ $DBT_FILES does not exist! Please check the GitHub repo: https://github.com/CLOUD2PREM/dbt2-iceberg-demo ⚠️"
     fi
 done
 

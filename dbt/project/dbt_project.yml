@@ -1,6 +1,6 @@
-
 name: 'jaffle_shop'
 version: '1.0.0'
+config-version: 2  # Add this
 
 profile: 'jaffle_shop'
 
@@ -17,5 +17,4 @@ clean-targets:
 
 models:
   jaffle_shop:
-    example:
-      +materialized: table
+    +materialized: table
