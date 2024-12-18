@@ -14,6 +14,8 @@ cd /root/airflow
 # Initialize the database and create user
 airflow db init 
 
+sleep 1
+
 airflow users create \
     --username cagri \
     --firstname admin \

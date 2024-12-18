@@ -1,23 +1,29 @@
 services:
   trino:
     container_name: trino
-    hostname: trino
-    image: trinodb/trino:457
+    build:
+      context: ./trino
+      dockerfile: Dockerfile
+      args:
+        TRINO_VERSION: ${TRINO_VERSION}
     ports:
       - '8080:8080'
+      - "2222:22"
     volumes:
-      - ./trino/config/config.properties:/etc/trino/config.properties:ro
-      - ./trino/config/jvm.config:/etc/trino/jvm.config:ro
-      - ./trino/catalog/jaffle_shop_iceberg.properties:/etc/trino/catalog/jaffle_shop_iceberg.properties:ro
-      - ./trino/catalog/jaffle_shop_postgres.properties:/etc/trino/catalog/jaffle_shop_postgres.properties:ro
-      - ./trino/logs:/var/log/trino  
+      - ./trino/etc/config.properties:/opt/trino/etc/config.properties:ro
+      - ./trino/etc/jvm.config:/opt/trino/etc/jvm.config:ro
+      - ./trino/etc/log.properties:/opt/trino/etc/log.properties:ro
+      - ./trino/etc/node.properties:/opt/trino/etc/node.properties:ro
+      - ./trino/logs:/var/log/trino/data
+      - ./trino/catalog:/opt/trino/etc/trino/catalog
+      - ./trino/init:/app/init
+    depends_on:
+      - postgres
+      - mariadb
+      - hive-metastore
     networks:
       dahbest:
         ipv4_address: 172.80.0.80
-    environment:
-      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    restart: always
 
   dbt:
     build:

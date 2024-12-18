@@ -27,6 +27,7 @@ WORKDIR /root/airflow
 # Install Apache Airflow using the ARG
 RUN pip install apache-airflow==$AIRFLOW_VERSION
 RUN pip install apache-airflow-providers-ssh
+RUN pip install apache-airflow-providers-trino
 RUN pip install psycopg2-binary
 
 # Copy config files and starter script
