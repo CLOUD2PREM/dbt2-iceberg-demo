@@ -42,9 +42,9 @@ docker network create --subnet=172.80.0.0/16 dahbest
 You can change your container username and password in .ENV file.
 ```
 
-4. ⚠️ Grant permission to the Airflow logs and DBT folder:
+4. ⚠️ Just unsure to change Trino connection type in `localhost:9090`:
 ```plaintext
-sudo chmod 777 -R ../dbt2-iceberg-demo
+Generic ==> Trino
 ```
 
 5. Start the containers.
