@@ -42,12 +42,7 @@ docker network create --subnet=172.80.0.0/16 dahbest
 You can change your container username and password in .ENV file.
 ```
 
-4. ⚠️ Just unsure to change Trino connection type in `localhost:9090`:
-```plaintext
-Generic ==> Trino
-```
-
-5. Start the containers.
+4. Start the containers.
 ```plaintext
 docker-compose up -d --build
 ```
@@ -99,7 +94,7 @@ dbt init <project_name>
 
 Edit the profiles.yml file:
 Here’s an example of a profiles.yml file for Trino and Postgres
-nano <your_project_folder>/dbt/profiles.yml
+vim dbt/profiles.yml
 ```plaintext
 jaffle_shop_iceberg:
   outputs:
@@ -137,26 +132,27 @@ dbt run --profile jaffle_shop_postgres
 We'll create two schemas for our ETL pipeline:
 1. **Postgres Schema**: This is a simple schema creation using an SQL query.
 ```plaintext
-  create_schema_postgres = SQLExecuteQueryOperator(
-      task_id='Create_postgres_schema',
-      conn_id='trino_conn',
-      sql="""
-      CREATE SCHEMA IF NOT EXISTS jaffle_shop_postgres.jaffle_shop_sc
-      """,
-      autocommit=True
-  )
+create_schema_postgres = SQLExecuteQueryOperator(
+    task_id='Create_postgres_schema',
+    conn_id='trino_conn',
+    sql="""
+        CREATE SCHEMA IF NOT EXISTS jaffle_shop_postgres.jaffle_shop_sc
+    """,
+    dag=dag
+)
 ```
 2. **Iceberg Schema**: This will create the schema in our lakehouse bucket.
 ```plaintext
-    create_schema_iceberg = SQLExecuteQueryOperator(
-        task_id='Create_iceberg_schema',
-        conn_id='trino_conn',
-        sql="""
+create_schema_iceberg = SQLExecuteQueryOperator(
+    task_id='Create_iceberg_schema',
+    conn_id='trino_conn',
+    sql="""
         CREATE SCHEMA IF NOT EXISTS jaffle_shop_iceberg.jaffle_shop_sc 
-        WITH (location = 's3a://lakehouse/jaffle_shop_sc')
+            WITH (location = 's3a://lakehouse/jaffle_shop_sc')
         """,
-        autocommit=True
-    )
+    autocommit=True,
+    dag=dag
+)
 ```
 
 ### 2. Create Tables for Postgres and Iceberg with Trino (41-126 Lines)
@@ -361,22 +357,23 @@ In this part, we move data from Iceberg tables back into Postgres. This step is 
 ### 5. Optimization for Dummy Node for Airflow Dag (192-196 Lines)
 To manage task dependencies, DummyOperator can be used to link multiple tasks, ensuring they run in sequence or in parallel, while keeping the DAG structure clean and organized.
 ```plaintext
-connect_node_1 = DummyOperator(task_id='connect_empty_node_1')
-connect_node_2 = DummyOperator(task_id='connect_empty_node_2')
-connect_node_3 = DummyOperator(task_id='connect_empty_node_3')
-connect_node_4 = DummyOperator(task_id='connect_empty_node_4')
-connect_node_5 = DummyOperator(task_id='connect_empty_node_5')
+connect_node_1 = DummyOperator(task_id='connect_empty_node_1', dag=dag)
+connect_node_2 = DummyOperator(task_id='connect_empty_node_2', dag=dag)
+connect_node_3 = DummyOperator(task_id='connect_empty_node_5', dag=dag)
 ```
 
 ### 6. Linked Tasks in The Airflow (198-203 Lines)
 At the end of the DAG, tasks are linked to define the execution order, ensuring that the appropriate tasks run first.
 ```plaintext
 [create_schema_iceberg, create_schema_postgres] >> connect_node_1
+
 connect_node_1 >> [create_clean_postgres_customers, create_clean_postgres_orders, create_clean_postgres_payments] >> connect_node_2
-connect_node_2 >> [create_clean_iceberg_customers, create_clean_iceberg_orders, create_clean_iceberg_payments] >> connect_node_3
-connect_node_3 >> [dbt_insert_raw_data_to_postgres_table, dbt_insert_raw_data_to_iceberg_table] >> connect_node_4
-connect_node_4 >> [iceberg_to_postgres_customers, iceberg_to_postgres_orders, iceberg_to_postgres_payments] >> connect_node_5
-connect_node_5 >> [postgres_to_iceberg_customers, postgres_to_iceberg_orders, postgres_to_iceberg_payments]
+
+connect_node_2 >> [create_clean_iceberg_customers, create_clean_iceberg_orders, create_clean_iceberg_payments] >> \
+    dbt_insert_raw_data_to_postgres_table >> dbt_insert_raw_data_to_iceberg_table >> \
+    [iceberg_to_postgres_customers, iceberg_to_postgres_orders, iceberg_to_postgres_payments] >> connect_node_3
+
+connect_node_3 >> [postgres_to_iceberg_customers, postgres_to_iceberg_orders, postgres_to_iceberg_payments]
 ```
 
 ## Project Conclusion and Data Flow Overview
