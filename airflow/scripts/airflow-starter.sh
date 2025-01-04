@@ -38,7 +38,7 @@ sleep 1
 
 # Add DBT SSH Connection
 airflow connections add 'trino_conn' \
-    --conn-type 'Trino' \
+    --conn-type 'trino' \
     --conn-login 'cagri' \
     --conn-port 8080 \
     --conn-host '172.80.0.80'
