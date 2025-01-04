@@ -268,10 +268,12 @@ We use the `dbt seed` command, which is specifically designed to load static dat
    In this step, we use a BashOperator to run the `dbt seed` command, which inserts the raw data into the Postgres tables. The dbt profile `jaffle_shop_postgres` ensures that the data is loaded into the correct Postgres schema.
 
   ```plaintext
-      dbt_insert_raw_data_to_postgres_table = BashOperator(
-          task_id='dbt_seed_raw_to_postgres',
-          bash_command='cd /opt/dbt/dbt_project && dbt seed --profile jaffle_shop_postgres',
-      )
+    dbt_insert_raw_data_to_postgres_table = SSHOperator(
+        task_id='dbt_seed_raw_to_postgres',
+        command='cd /dbt && dbt seed --profiles-dir /dbt/profiles --project-dir /dbt/project --profile jaffle_shop_postgres',
+        ssh_conn_id='dbt_ssh',
+        dag=dag
+    )
   ```
 
   - This command navigates to the dbt project directory and executes the dbt seed command
@@ -281,10 +283,12 @@ We use the `dbt seed` command, which is specifically designed to load static dat
   Similarly, we seed the raw data into Iceberg using another BashOperator, which runs the dbt seed command with the jaffle_shop_iceberg profile. This step ensures that the raw data is also available in the Iceberg tables for lakehouse-based operations.
 
   ```plaintext
-      dbt_insert_raw_data_to_iceberg_table = BashOperator(
-          task_id='dbt_seed_raw_to_iceberg',
-          bash_command='cd /opt/dbt/dbt_project && dbt seed --profile jaffle_shop_iceberg',
-      )
+    dbt_insert_raw_data_to_iceberg_table = SSHOperator(
+        task_id='dbt_seed_raw_to_iceberg',
+        command='cd /dbt && dbt seed --profiles-dir /dbt/profiles --project-dir /dbt/project --profile jaffle_shop_iceberg',
+        ssh_conn_id='dbt_ssh',
+        dag=dag
+    )
   ```
 
   - This command inserts the raw data into the Iceberg schema (jaffle_shop_iceberg.jaffle_shop_sc) with the specified S3 location.
