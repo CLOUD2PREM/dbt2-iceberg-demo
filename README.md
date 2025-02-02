@@ -3,7 +3,7 @@ Iceberg with Postgres Seamless Data Integration
 
 This project creates a data pipeline. It uses Airflow to manage ETL processes between different databases through Trino. The pipeline uses HDFS with NameNode and DataNode for storage of Apache Iceberg and PostgreSQL for handling database tasks. Airflow helps by automating and scheduling the workflows. The Hive Metastore service manages metadata for Iceberg tables, while Hive provides data warehouse capabilities. The Hive Metastore organizes and manages Iceberg tables. This makes it easy to manage and access the data. Additionally, dbt is used to add raw data into PostgreSQL. It uses the dbt seed command to load CSV files. This makes it easy to put raw data into PostgreSQL, which is then transformed and connected to Iceberg for better data analysis. The documentation also includes details about the software versions and tools used in the project.
 
-![image](https://github.com/user-attachments/assets/02ff6958-7487-44a8-b26f-cb1ca5bda630)
+![image](https://github.com/user-attachments/assets/b73e2300-5a8e-4aca-bbc8-c84d02346bbd)
 
 # 🛠️ Environment Setup
 ### System and Software Versions
