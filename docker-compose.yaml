@@ -1,38 +1,38 @@
 services:
+
   trino:
     container_name: trino
     build:
-      context: ./trino
+      context: ./images/trino
       dockerfile: Dockerfile
       args:
         TRINO_VERSION: ${TRINO_VERSION}
     ports:
       - '8080:8080'
-      - "2222:22"
     volumes:
-      - ./trino/etc/config.properties:/opt/trino/etc/config.properties:ro
-      - ./trino/etc/jvm.config:/opt/trino/etc/jvm.config:ro
-      - ./trino/etc/log.properties:/opt/trino/etc/log.properties:ro
-      - ./trino/etc/node.properties:/opt/trino/etc/node.properties:ro
-      - ./trino/logs:/var/log/trino/data
-      - ./trino/catalog:/opt/trino/etc/trino/catalog
-      - ./trino/init:/app/init
+      - ./config/trino/etc:/opt/trino/etc
+      - ./config/trino/init-sql:/opt/trino/init-sql
+      - ./data_logs/trino_logs:/var/log/trino/data
+      - ./config/hdfs:/opt/hadoop-3.4.1/etc/hadoop
     depends_on:
       - postgres
-      - mariadb
-      - hive-metastore
+      - hms
+      - datanode
+      - namenode
+      - hive
+      - airflow
     networks:
       dahbest:
         ipv4_address: 172.80.0.80
 
   dbt:
-    build:
-      context: ./dbt
-      dockerfile: Dockerfile
     container_name: dbt
+    build:
+      context: ./images/dbt
+      dockerfile: Dockerfile
     volumes:
-      - ./dbt/project:/dbt/project
-      - ./dbt/profiles:/dbt/profiles
+      - ./config/dbt/project:/dbt/project
+      - ./config/dbt/profiles:/dbt/profiles
     ports:
       - "2223:22"
     depends_on:
@@ -42,9 +42,29 @@ services:
       dahbest:
         ipv4_address: 172.80.0.79
 
+  airflow:
+    container_name: airflow
+    build:
+      context: ./images/airflow
+      dockerfile: Dockerfile
+      args:
+        AIRFLOW_VERSION: ${AIRFLOW_VERSION}
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/airflow/configs/airflow.cfg:/root/airflow/airflow.cfg
+      - ./config/airflow/configs/webserver_config.py:/root/airflow/webserver_config.py
+      - ./config/airflow/dags:/root/airflow/dags
+      - ./data_logs/airflow:/root/airflow/logs
+    depends_on:
+      - postgres
+    networks:
+      dahbest:
+        ipv4_address: 172.80.0.11
+
   postgres:
-    image: postgres:16
     container_name: postgres
+    image: postgres:16
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -52,99 +72,91 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - ./postgres/postgres_data:/var/lib/postgresql/data
-      - ./postgres/query_init/jaffle_shop_postgres.sql:/docker-entrypoint-initdb.d/jaffle_shop_postgres.sql:ro
-      - ./postgres/query_init/jaffle_shop_sc.sql:/docker-entrypoint-initdb.d/jaffle_shop_sc.sql:ro
-    restart: always
+      - ./data_logs/postgres_data:/var/lib/postgresql/data
+      - ./config/postgres/query_init:/docker-entrypoint-initdb.d
     networks:
       dahbest:
         ipv4_address: 172.80.0.10
 
-  mariadb:
-    hostname: mariadb
-    container_name: mariadb
-    image: mariadb:10.5.8
-    ports:
-      - 3306:3306
-    volumes:
-      - ./mariadb/mariadb_data:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
-      MYSQL_USER: $MYSQL_USER
-      MYSQL_PASSWORD: $MYSQL_PASSWORD
-      MYSQL_DATABASE: metastore_db
-    networks:
-      - dahbest
-
-  hive-metastore:
-    container_name: hive-metastore
-    build: 
-      context: ./hive-metastore
-      dockerfile: Dockerfile
-    hostname: hive-metastore
-    ports:
-      - 9083:9083
-    volumes:
-      - ./hive-metastore/conf/metastore-site.xml:/opt/apache-hive-metastore-3.1.3-bin/conf/metastore-site.xml:ro
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-    environment:
-      METASTORE_DB_HOSTNAME: mariadb
-      METASTORE_TYPE: mysql
-    depends_on:
-      - mariadb
-    networks:
-      - dahbest
-
-  minio:
-    hostname: minio
-    container_name: minio
+  namenode:
+    container_name: namenode
+    hostname: namenode
     build:
-      context: ./minio
+      context: ./images/hdfs
       dockerfile: Dockerfile
     ports:
-      - 9000:9000
-      - 9001:9001
+      - "9870:9870"
+      - "9000:9000"
     volumes:
-      - ./minio/minio_data:/data
-    environment:
-      MINIO_ROOT_USER: ${MINIO_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_USER_PASSWORD}
-      MINIO_DOMAIN: minio 
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID} 
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY} 
-      AWS_REGION: ${AWS_REGION}
-    command: server --console-address ":9001" /data
+      - ./data_logs/namenode:/opt/hadoop/dfs/name
+      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
+      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
     networks:
       dahbest:
+        ipv4_address: 172.80.0.33
+
+  datanode:
+    container_name: datanode
+    hostname: datanode
+    build:
+      context: ./images/hdfs
+      dockerfile: Dockerfile
+    ports:
+      - "9864:9864"
+    volumes:
+      - ./data_logs/datanode:/opt/hadoop/dfs/data
+      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
+      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
+    networks:
+      dahbest:
+        ipv4_address: 172.80.0.32
+    depends_on:
+      - namenode
+
+  hms:
+    container_name: hms
+    hostname: hms
+    build:
+      context: ./images/hms
+      dockerfile: Dockerfile
+    ports:
+      - 9083:9083 
+    volumes:
+      - ./config/hms/metastore-site.xml:/opt/apache-hive-metastore-3.1.3-bin/conf/metastore-site.xml
+      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
+      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
+      - ./data_logs/hms:/opt/apache-hive-metastore-3.1.3-bin/logs
+    networks:
+      dahbest:
+        ipv4_address: 172.80.0.30
         aliases:
-          - minio
-        ipv4_address: 172.80.0.25
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  airflow:
-    container_name: airflow
-    build:
-      context: ./airflow
-      dockerfile: Dockerfile
-      args:
-        AIRFLOW_VERSION: ${AIRFLOW_VERSION}
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./airflow/logs:/root/airflow/logs
-      - ./airflow/dags:/root/airflow/dags
+          - hms.dahbest
+          - hms
     depends_on:
-      - postgres
+      - namenode
+      - datanode
+
+  hive:
+    container_name: hive
+    hostname: hive
+    build:
+      context: ./images/hive
+      dockerfile: Dockerfile
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    volumes:
+      - ./config/hive/hive-site.xml:/opt/apache-hive-3.1.3-bin/conf/hive-site.xml
+      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
+      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
+      - ./data_logs/hive:/opt/apache-hive-3.1.3-bin/logs
     networks:
       dahbest:
-        ipv4_address: 172.80.0.11
+        ipv4_address: 172.80.0.31
+    depends_on:
+      - namenode
+      - datanode
+      - hms
 
 networks:
   dahbest:
