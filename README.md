@@ -19,7 +19,7 @@ This project creates a data pipeline. It uses Airflow to manage ETL processes be
 | **Iceberg**       | High-performance table format for big data      | 1.6.1                               |            |
 | **Python**        | Programming language                           | 3.10.12                             |            |
 | **Airflow**       | Workflow automation and scheduling tool         | 2.10.1                              | 9090       |
-| **Hadoop**        | Framework for distributed storage and processing| 3.4.1                             |            |
+| **Hadoop**        | Framework for distributed storage and processing| 3.4.1                             |  9870          |
 | **Hive-Metastore**| Metadata service for table management and storage           | 3.1.3                               |            |
 | **Hive**          | Data warehouse software for query and analysis            | 3.1.3                               |           |
 
