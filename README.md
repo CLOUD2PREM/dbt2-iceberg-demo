@@ -388,8 +388,6 @@ Trino — Postgres connector: https://trino.io/docs/current/connector/postgresql
 
 Trino — dbt connector: https://docs.getdbt.com/docs/core/connect-data-platform/trino-setup
 
-Airflow & Scheduler container ENV: https://hub.docker.com/r/bitnami/airflow & https://hub.docker.com/r/bitnami/airflow-scheduler
-
 Hive-Metastore: https://repo1.maven.org/maven2/org/apache/hive/hive-standalone-metastore/3.1.3/
 
 # Authors
