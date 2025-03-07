@@ -36,7 +36,7 @@ airflow connections add 'dbt_ssh' \
 
 sleep 1
 
-# Add DBT SSH Connection
+# Add Trino Connection
 airflow connections add 'trino_conn' \
     --conn-type 'trino' \
     --conn-login 'cagri' \
