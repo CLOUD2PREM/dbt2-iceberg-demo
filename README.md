@@ -396,7 +396,7 @@ HDFS supports the Hive Metastore, organizing Iceberg tables. We use dbt to initi
 
 This architecture integrates Airflow, Trino, Iceberg, Postgres, HDFS, and dbt into a robust pipeline that efficiently manages and processes structured and unstructured data.
 
-![full_dag](https://github.com/user-attachments/assets/6801c202-0f70-418d-b707-40e36be01e15)
+<img width="950" alt="full_dag" src="https://github.com/user-attachments/assets/3a635ad0-a12f-4709-92b4-0b0f80fef0bc" />
 
 # References:
 Trino — Hive connector: https://trino.io/docs/current/connector/hive.html
