@@ -50,10 +50,11 @@ services:
       args:
         AIRFLOW_VERSION: ${AIRFLOW_VERSION}
     ports:
-      - "9090:9090"
+      - "9090:8080"
     volumes:
       - ./config/airflow/configs/airflow.cfg:/root/airflow/airflow.cfg
       - ./config/airflow/configs/webserver_config.py:/root/airflow/webserver_config.py
+      - ./config/airflow/configs/admin_password.json:/root/airflow/admin_password.json
       - ./config/airflow/dags:/root/airflow/dags
       - ./data_logs/airflow:/root/airflow/logs
     depends_on:

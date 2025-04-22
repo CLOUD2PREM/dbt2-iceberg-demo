@@ -11,18 +11,10 @@ done
 
 cd /root/airflow
 
+sleep 5 
+
 # Initialize the database and create user
-airflow db init 
-
-sleep 1
-
-airflow users create \
-    --username cagri \
-    --firstname admin \
-    --lastname admin \
-    --role Admin \
-    --email admin@example.com \
-    --password 3541 || true
+airflow db migrate 
 
 sleep 1
 
@@ -48,5 +40,17 @@ sleep 5
 # Start Airflow scheduler in the background
 airflow scheduler &
 
-# Start Airflow webserver in the foreground
-exec airflow webserver
+sleep 1
+
+# Start Airflow dag-processor in the background
+airflow dag-processor &
+
+sleep 1
+
+# Start Airflow triggerer in the background
+airflow triggerer & 
+
+sleep 1
+
+# Start Airflow webserver
+exec airflow api-server

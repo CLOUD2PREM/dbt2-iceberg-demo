@@ -16,7 +16,7 @@ jaffle_shop_postgres:
       host: 172.80.0.10
       port: 5432
       user: cagri
-      password: '3541'
+      password: '35413541'
       dbname: jaffle_shop_postgres
       schema: jaffle_shop_sc
   target: dev

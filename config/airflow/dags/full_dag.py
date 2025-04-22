@@ -1,16 +1,14 @@
 from airflow import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
-from airflow.operators.bash import BashOperator
-from airflow.operators.dummy import DummyOperator
-from airflow.utils.dates import days_ago
+from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta
 
 default_args = {
     'owner': 'cagri',
     'depends_on_past': False,
     'start_date': datetime.now(),
-    'email': ['your_email@example.com'],
+    'email': ['mucagriaktas@gmail.com'],
     'email_on_failure': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
@@ -19,8 +17,7 @@ default_args = {
 dag = DAG(
     'ETL_Full',
     default_args=default_args,
-    description='DBT pipeline with Trino',
-    schedule_interval=timedelta(days=1),
+    description='DBT pipeline with Trino'
 )
 
 create_schema_iceberg = SQLExecuteQueryOperator(
@@ -210,9 +207,9 @@ iceberg_to_postgres_payments = SQLExecuteQueryOperator(
     dag=dag
 )
 
-connect_node_1 = DummyOperator(task_id='connect_empty_node_1', dag=dag)
-connect_node_2 = DummyOperator(task_id='connect_empty_node_2', dag=dag)
-connect_node_3 = DummyOperator(task_id='connect_empty_node_5', dag=dag)
+connect_node_1 = EmptyOperator(task_id='connect_empty_node_1', dag=dag)
+connect_node_2 = EmptyOperator(task_id='connect_empty_node_2', dag=dag)
+connect_node_3 = EmptyOperator(task_id='connect_empty_node_5', dag=dag)
 
 [create_schema_iceberg, create_schema_postgres] >> connect_node_1
 
