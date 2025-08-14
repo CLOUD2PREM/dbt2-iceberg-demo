@@ -53,4 +53,4 @@ airflow triggerer &
 sleep 1
 
 # Start Airflow webserver
-exec airflow api-server
+airflow api-server

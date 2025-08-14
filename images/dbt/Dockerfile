@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     openssh-server \
     && mkdir -p /var/log \
     && touch /var/log/auth.log \
-    && mkdir /var/run/sshd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

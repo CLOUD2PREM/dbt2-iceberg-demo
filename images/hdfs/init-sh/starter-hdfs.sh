@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export HADOOP_HOME=/opt/hadoop-3.4.1
-export JAVA_HOME=/usr/local/openjdk-8
+export JAVA_HOME=/usr/local/openjdk-17
 export PATH=$PATH:$HADOOP_HOME/bin
 
 # Create necessary directories

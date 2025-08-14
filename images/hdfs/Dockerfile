@@ -1,11 +1,11 @@
-FROM openjdk:8-jre-slim-buster
+FROM openjdk:17-slim-bullseye
 
 WORKDIR /opt
 
 ENV HADOOP_VERSION=3.4.1
 ENV HADOOP_HOME=/opt/hadoop-${HADOOP_VERSION}
 ENV PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
-ENV JAVA_HOME=/usr/local/openjdk-8
+ENV JAVA_HOME=/usr/local/openjdk-17
 
 RUN apt-get update && \
     apt-get install -y curl openssh-server openssh-client procps && \

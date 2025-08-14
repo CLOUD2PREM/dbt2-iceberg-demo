@@ -19,6 +19,7 @@ RUN mkdir -p /root/airflow
 
 WORKDIR /root/airflow
 
+RUN pip install graphviz
 RUN pip install apache-airflow==$AIRFLOW_VERSION
 RUN pip install apache-airflow-providers-ssh
 RUN pip install apache-airflow-providers-trino
