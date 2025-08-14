@@ -64,11 +64,18 @@ You can change your container username and password in .ENV file.
 docker-compose up -d --build
 ```
 
-⚠️ For logging:
-Please ensure to give full read data_logs for logging.
-```plaintext
-sudo chmod 777 -R data_logs
-```
+5. Start The ETL Dag:
+Wait 1–2 minutes for Airflow to fully start, then go to `localhost:9090`. You can run the DAG file in two ways:
+    1. **Airflow UI:**
+        ```bash
+        DAGS Section => Trigger
+        ```
+    2. **Airflow CLI:**
+        ```bash
+        docker exec -it airflow bash
+        airflow dags trigger ETL_Full
+        airflow dags unpause ETL_Full
+        ```
 
 # ⚠️ Iceberg Connection Information:
 If you want to change your Iceberg connection information. 
