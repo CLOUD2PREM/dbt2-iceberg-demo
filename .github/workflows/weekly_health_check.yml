@@ -1,0 +1,54 @@
+name: Weekly Project Health Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '* 23 * * 5'
+  
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Create Docker External Network
+        run: docker network create --subnet=172.80.0.0/16 dahbest
+        
+      - name: Build and start services
+        run: docker-compose up -d --build
+
+      - name: Wait for services to start
+        run: sleep 60
+
+      - name: Trigger and unpause DAG
+        run: |
+          docker exec airflow airflow dags trigger ETL_Full
+          sleep 3
+          docker exec airflow airflow dags unpause ETL_Full
+
+      - name: Wait and check for DAG success
+        run: |
+          timeout=300  # 5 minutes timeout
+          interval=10
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if docker-compose logs airflow | grep -q "task_id=postgres_to_iceberg_payments.*executor_state=success"; then
+              echo "DAG completed successfully. Project is healthy."
+              exit 0
+            fi
+            sleep $interval
+            elapsed=$((elapsed + interval))
+          done
+          echo "Timeout reached. DAG did not complete successfully. Project is unhealthy."
+          exit 1
+
+      - name: Stop services
+        if: always()
+        run: docker-compose down
