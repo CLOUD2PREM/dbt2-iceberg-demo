@@ -3,11 +3,17 @@ name: Weekly Project Health Check
 on:
   workflow_dispatch:
   schedule:
-    - cron: '* 23 * * 5'
+    - cron: '0 23 * * 5'
+
+concurrency:
+  group: weekly-health-check
+  cancel-in-progress: true
   
 jobs:
   health-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,6 +26,7 @@ jobs:
 
       - name: Create Docker External Network
         run: docker network create --subnet=172.80.0.0/16 dahbest
+        continue-on-error: true  # Network might already exist
         
       - name: Build and start services
         run: docker-compose up -d --build
