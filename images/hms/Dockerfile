@@ -1,27 +1,42 @@
 FROM openjdk:17-slim-bullseye
 
-WORKDIR /opt
+ARG HADOOP_VERSION=${HADOOP_VERSION}
+ARG METASTORE_VERSION=${METASTORE_VERSION}
 
-ENV HADOOP_VERSION=3.4.1
-ENV METASTORE_VERSION=3.0.0
+ENV HADOOP_HOME=/opt/hadoop
+ENV HIVE_HOME=/opt/hive-metastore
+ENV HADOOP_OPTS="-Dmetastore.log.dir=${HIVE_HOME}/logs"
+ENV HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
+ENV PATH=$PATH:$HADOOP_HOME/bin:$HIVE_HOME/bin
+ENV PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+
+ENV POSTGRES_USER=${POSTGRES_USER}
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 RUN apt-get update && \
-    apt-get install -y curl wget netcat procps net-tools iproute2 && \
+    apt-get install -y wget netcat procps gettext && \
     rm -rf /var/lib/apt/lists/*
 
-ENV HADOOP_HOME=/opt/hadoop-${HADOOP_VERSION}
-ENV HIVE_HOME=/opt/apache-hive-metastore-${METASTORE_VERSION}-bin
+WORKDIR /opt
 
-RUN curl -L https://repo1.maven.org/maven2/org/apache/hive/hive-standalone-metastore/${METASTORE_VERSION}/hive-standalone-metastore-${METASTORE_VERSION}-bin.tar.gz | tar zxf - && \
-    curl -L https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz | tar zxf -
+RUN mkdir -p ${HIVE_HOME} && \
+    mkdir -p ${HADOOP_HOME} && \
+    mkdir -p ${HIVE_HOME}/logs && \
+    chmod -R 777 ${HIVE_HOME}
+    
+RUN wget https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
+   tar -xzf hadoop-${HADOOP_VERSION}.tar.gz && \
+   mv hadoop-${HADOOP_VERSION}/* ${HADOOP_HOME} && \
+   rm -rf hadoop-${HADOOP_VERSION}.tar.gz hadoop-${HADOOP_VERSION}
 
-RUN curl -L https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-web/2.24.3/log4j-web-2.24.3.jar -o ${HIVE_HOME}/lib/log4j-web-2.14.1.jar
+RUN wget https://dlcdn.apache.org/hive/hive-standalone-metastore-${METASTORE_VERSION}/hive-standalone-metastore-${METASTORE_VERSION}-bin.tar.gz && \
+    tar -xzf hive-standalone-metastore-${METASTORE_VERSION}-bin.tar.gz && \
+    mv apache-hive-metastore-${METASTORE_VERSION}-bin/* ${HIVE_HOME} && \
+    rm -rf hive-standalone-metastore-${METASTORE_VERSION}-bin.tar.gz apache-hive-metastore-${METASTORE_VERSION}-bin
+ 
+RUN wget https://jdbc.postgresql.org/download/postgresql-42.7.6.jar -P ${HIVE_HOME}/lib/ 
 
-RUN chmod 777 /
+COPY init-sh/hms-starter.sh /usr/bin/hms-starter.sh
+RUN chmod +x /usr/bin/hms-starter.sh
 
-COPY init-sh/starter-hms.sh /starter-hms.sh
-RUN chmod +x /starter-hms.sh
-
-EXPOSE 9083
-
-ENTRYPOINT ["/starter-hms.sh"]
+CMD [ "hms-starter.sh" ]

@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: customer_orders
+    description: "Customer dimension with lifecycle metrics and PII"
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: first_order
+      - name: most_recent_order
+      - name: number_of_orders
+
+  - name: customer_payments
+    description: "Order fact enriched with payment splits"
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: customer_id
+      - name: total_amount
+
+  - name: order_payments
+    description: "Order fact enriched with payment splits"
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: credit_card_amount
+        relationships:
+          arguments:
+            to: ref('stg_payments')
+            field: 
+      - name: coupon_amount
+      - name: bank_transfer_amount
+      - name: gift_card_amount
+      - name: total_amount
+        relationships:
+          arguments:
+            to: ref('stg_payments')

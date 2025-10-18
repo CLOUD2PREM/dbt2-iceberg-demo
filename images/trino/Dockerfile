@@ -1,40 +1,43 @@
-FROM eclipse-temurin:22-jdk-jammy
+FROM openjdk:25-slim-bullseye
 
-ARG TRINO_VERSION
+ARG TRINO_VERSION=${TRINO_VERSION}
 
-ENV TRINO_HOME=/opt/trino \
-    PATH="/opt/trino/bin:$PATH"
+ENV TRINO_HOME=/opt/trino
+ENV PATH="/opt/trino/bin:$PATH"
+ENV HADOOP_CONF_DIR=/opt/trino/confs
 
-# Install dependencies and Python
+RUN mkdir ${TRINO_HOME} && \
+    mkdir -p ${TRINO_HOME}/logs && \
+    mkdir -p ${TRINO_HOME}/confs && \
+    mkdir -p ${TRINO_HOME}/init-sql
+
+WORKDIR ${TRINO_HOME}
+
 RUN apt-get update && apt-get install -y \
-    curl \
-    python3 \
-    python3-pip \
+    wget \
+    apache2-utils \
     jq \
-    libicu-dev \
-    less \
-    && touch /var/log/auth.log \
+    gettext \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Download and install Trino
-RUN mkdir -p $TRINO_HOME \
-    && curl -fsSL "https://repo1.maven.org/maven2/io/trino/trino-server/$TRINO_VERSION/trino-server-$TRINO_VERSION.tar.gz" | tar -xz -C $TRINO_HOME --strip-components=1 \
-    && mkdir -p $TRINO_HOME/etc $TRINO_HOME/etc/catalog
+RUN wget https://repo1.maven.org/maven2/io/trino/trino-server/${TRINO_VERSION}/trino-server-${TRINO_VERSION}.tar.gz \
+    -O trino-server-${TRINO_VERSION}.tar.gz && \
+    tar -xzf trino-server-${TRINO_VERSION}.tar.gz && \
+    mv trino-server-${TRINO_VERSION}/* ${TRINO_HOME} && \
+    rm -rf trino-server-${TRINO_VERSION}.tar.gz trino-server-${TRINO_VERSION}
 
-RUN mkdir -p $TRINO_HOME/init-sh
+RUN wget https://repo1.maven.org/maven2/io/trino/trino-cli/${TRINO_VERSION}/trino-cli-${TRINO_VERSION}-executable.jar \
+    -O /opt/trino-cli-${TRINO_VERSION}-executable.jar && \
+    mv /opt/trino-cli-${TRINO_VERSION}-executable.jar /usr/bin/trino && \
+    chmod +x /usr/bin/trino
 
-# Download and install the Trino CLI (https://repo1.maven.org/maven2/io/trino/trino-cli/)
-RUN curl "https://repo1.maven.org/maven2/io/trino/trino-cli/$TRINO_VERSION/trino-cli-$TRINO_VERSION-executable.jar" -o $TRINO_HOME/init-sh/trino-cli \
-    && chmod +x $TRINO_HOME/init-sh/trino-cli
+COPY init-sh/trino-starter.sh /usr/bin/trino-starter.sh
+COPY init-sh/post-init.sh /usr/bin/post-init.sh
 
-COPY init-sh/starter-trino.sh $TRINO_HOME/init-sh/starter-trino.sh
+RUN chmod +x /usr/bin/trino-starter.sh && \
+    chmod +x /usr/bin/post-init.sh
 
-RUN chmod -R 777 $TRINO_HOME/init-sh/starter-trino.sh && \
-    chmod +x $TRINO_HOME/init-sh/starter-trino.sh
-
-WORKDIR $TRINO_HOME
-
-ENTRYPOINT ["/opt/trino/init-sh/starter-trino.sh"]
+CMD [ "trino-starter.sh" ]

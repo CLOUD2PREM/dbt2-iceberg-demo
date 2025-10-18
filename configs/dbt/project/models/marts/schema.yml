@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Customer dimension with lifecycle metrics and PII"
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: first_name
+      - name: last_name
+      - name: email
+      - name: first_order
+      - name: most_recent_order
+      - name: number_of_orders
+      - name: customer_lifetime_value
+
+  - name: fct_orders
+    description: "Order fact enriched with payment splits"
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: order_date
+      - name: status
+      - name: amount
+      - name: credit_card_amount
+      - name: coupon_amount
+      - name: bank_transfer_amount
+      - name: gift_card_amount

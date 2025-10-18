@@ -26,27 +26,27 @@ jobs:
 
       - name: Create Docker External Network
         run: docker network create --subnet=172.80.0.0/16 dahbest
-        continue-on-error: true  # Network might already exist
+        continue-on-error: true
         
       - name: Build and start services
         run: docker-compose up -d --build
 
       - name: Wait for services to start
-        run: sleep 60
+        run: sleep 30
 
       - name: Trigger and unpause DAG
         run: |
-          docker exec airflow airflow dags trigger ETL_Full
+          docker exec airflow airflow dags trigger ETL_Lakehouse_Pattern
           sleep 3
-          docker exec airflow airflow dags unpause ETL_Full
+          docker exec airflow airflow dags unpause ETL_Lakehouse_Pattern
 
       - name: Wait and check for DAG success
         run: |
-          timeout=300  # 5 minutes timeout
+          timeout=300
           interval=10
           elapsed=0
           while [ $elapsed -lt $timeout ]; do
-            if docker-compose logs airflow | grep -q "task_id=postgres_to_iceberg_payments.*executor_state=success"; then
+            if docker-compose logs airflow | grep -q "INFO - TaskInstance Finished: dag_id=ETL_Lakehouse_Pattern, task_id=dbt_docs.dbt_docs_generate"; then
               echo "DAG completed successfully. Project is healthy."
               exit 0
             fi

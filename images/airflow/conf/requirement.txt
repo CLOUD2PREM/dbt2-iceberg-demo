@@ -1,0 +1,8 @@
+graphviz
+apache-airflow-providers-ssh
+apache-airflow-providers-trino
+psycopg2-binary 
+asyncpg 
+flask-appbuilder
+pydantic==2.11.0
+starlette==0.47.3

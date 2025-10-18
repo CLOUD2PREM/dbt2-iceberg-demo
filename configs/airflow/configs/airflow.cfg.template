@@ -1,0 +1,35 @@
+[core]
+dags_folder = /opt/airflow/dags
+plugins_folder = /opt/airflow/plugins
+executor = LocalExecutor
+load_examples = False
+task_state_update_method = db
+allowed_deserialization_classes = airflow.* astronomer.*
+
+simple_auth_manager_all_admins = False
+simple_auth_manager_users = $AIRFLOW_USER:admin
+simple_auth_manager_passwords_file = /opt/airflow/auth/admin_password.json
+
+[database]
+sql_alchemy_conn = postgresql+psycopg2://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/airflow_db
+sql_engine_encoding = utf-8
+sql_alchemy_pool_enabled = True
+sql_alchemy_pool_size = 5
+sql_alchemy_max_overflow = 10
+
+[api]
+web_server_host = 0.0.0.0
+port = 9090
+base_url = http://localhost:9090
+secret_key = bd38d6c3e48320fb2e187c7be36802898460aeb3a6a20a126b06b39962b6
+
+[api_auth]
+jwt_secret = bd38d6c3e48320fb2e187c7be36802898460aeb3a6a20a126b06b39962b6
+
+[scheduler]
+task_queued_timeout = 600
+
+[logging]
+logging_level = INFO
+log_filename_template = {{ ti.dag_id }}/{{ ti.task_id }}/{{ ti.ts }}/{{ try_number|default(ti.try_number) }}.log
+fab_logging_level = INFO

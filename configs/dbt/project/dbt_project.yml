@@ -1,0 +1,27 @@
+name: "jaffle_shop_iceberg"
+version: "1.0.0"
+profile: "jaffle_shop_iceberg"
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+seeds:
+  jaffle_shop_iceberg:
+    +enabled: true
+    
+models:
+  jaffle_shop_iceberg:
+    +materialized: table
+    staging:
+      +tags: ["staging", "raw_data"]
+    intermediate:
+      +tags: ["intermediate", "transformations"]  
+    marts:
+      +tags: ["marts", "business_logic"]
+
+flags:
+  require_certificate_validation: True

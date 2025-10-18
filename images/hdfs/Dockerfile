@@ -1,31 +1,29 @@
 FROM openjdk:17-slim-bullseye
 
-WORKDIR /opt
+ARG HADOOP_VERSION=${HADOOP_VERSION}
 
-ENV HADOOP_VERSION=3.4.1
-ENV HADOOP_HOME=/opt/hadoop-${HADOOP_VERSION}
+ENV HADOOP_HOME=/opt/hadoop
+ENV HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
 ENV PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
-ENV JAVA_HOME=/usr/local/openjdk-17
 
 RUN apt-get update && \
-    apt-get install -y curl openssh-server openssh-client procps && \
+    apt-get install -y wget openssh-server openssh-client procps && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl -L https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz | tar zxf -
+WORKDIR /opt
+
+RUN mkdir ${HADOOP_HOME}
+
+RUN wget https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
+   tar -xzf hadoop-${HADOOP_VERSION}.tar.gz && \
+   mv hadoop-${HADOOP_VERSION}/* ${HADOOP_HOME} && \
+   rm -rf hadoop-${HADOOP_VERSION}.tar.gz hadoop-${HADOOP_VERSION}
 
 RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
     chmod 0600 ~/.ssh/authorized_keys
 
-RUN mkdir -p /opt/hadoop/dfs/name && \
-    mkdir -p /opt/hadoop/dfs/data && \
-    mkdir -p $HADOOP_HOME/logs && \
-    chmod -R 777 /opt/hadoop && \
-    chmod -R 777 $HADOOP_HOME/logs
+COPY init-sh/hdfs-starter.sh /usr/bin/hdfs-starter.sh
+RUN chmod +x /usr/bin/hdfs-starter.sh
 
-COPY init-sh/starter-hdfs.sh /starter-hdfs.sh
-RUN chmod +x /starter-hdfs.sh
-
-EXPOSE 9000 9870 9864
-
-ENTRYPOINT ["/starter-hdfs.sh"]
+CMD [ "hdfs-starter.sh" ]

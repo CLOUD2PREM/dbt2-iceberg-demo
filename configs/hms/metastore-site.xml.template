@@ -1,0 +1,71 @@
+<configuration>
+    <!-- HDFS Configuration -->
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://namenode:9000</value>
+    </property>
+  
+    <!-- Warehouse directory in HDFS -->
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>hdfs://namenode:9000/user/hive/warehouse</value>
+    </property>
+
+    <!-- PostgreSQL Database Configuration -->
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:postgresql://postgres:5432/hms_db</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>org.postgresql.Driver</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>$POSTGRES_USER</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>$POSTGRES_PASSWORD</value>
+    </property>
+    <property>
+        <name>datanucleus.schema.autoCreateAll</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hive.metastore.schema.verification</name>
+        <value>true</value>
+    </property>
+
+    <!-- Iceberg Catalog Configuration -->
+    <property>
+        <name>iceberg.catalog.hadoop_prod.type</name>
+        <value>hive</value>
+    </property>
+    <property>
+        <name>iceberg.catalog.hadoop_prod.uri</name>
+        <value>thrift://hms:9083</value>
+    </property>
+    <property>
+        <name>iceberg.catalog.hadoop_prod.warehouse</name>
+        <value>hdfs://namenode:9000/user/hive/warehouse</value>
+    </property>
+    <property>
+        <name>hive.support.sql11.reserved.keywords</name>
+        <value>true</value>
+    </property>
+
+    <!-- Logging Configuration -->
+    <property>
+        <name>hive.log.dir</name>
+        <value>/opt/hive-metastore/logs</value>
+    </property>
+    <property>
+        <name>hive.log.file</name>
+        <value>metastore.log</value>
+    </property>
+    <property>
+        <name>hive.log.threshold</name>
+        <value>INFO</value>
+    </property>
+</configuration>

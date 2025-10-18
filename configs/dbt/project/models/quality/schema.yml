@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: row_count_check
+    description: "Check if the row count in the customers table is above a certain threshold"
+    columns:
+      - name: total_rows
+      - name: unique_customers
+      - name: null_amounts
+      - name: null_dates
+      - name: insert_date
+      - name: validation_status
+
+  - name: status_distribution
+    description: "Check the distribution of order statuses in the orders table"
+    columns:
+      - name: status
+      - name: status_count
+      - name: status_percentage
+      - name: total_amount
+      - name: insert_date
+      - name: distribution_status

@@ -1,0 +1,14 @@
+version: 2
+
+seeds:
+  - name: raw_customers
+    config:
+      schema: jaffle_shop_sc
+        
+  - name: raw_orders
+    config:
+      schema: jaffle_shop_sc
+        
+  - name: raw_payments
+    config:
+      schema: jaffle_shop_sc

@@ -1,25 +1,27 @@
 services:
-
   trino:
     container_name: trino
+    hostname: trino
     build:
       context: ./images/trino
       dockerfile: Dockerfile
       args:
         TRINO_VERSION: ${TRINO_VERSION}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - '8080:8080'
     volumes:
-      - ./config/trino/etc:/opt/trino/etc
-      - ./config/trino/init-sql:/opt/trino/init-sql
-      - ./data_logs/trino_logs:/var/log/trino/data
-      - ./config/hdfs:/opt/hadoop-3.4.1/etc/hadoop
+      - ./configs/trino/:/opt/trino/etc
+      - ./configs/hdfs:/opt/trino/confs
+      - ./configs/trino/init-sql/:/opt/trino/init-sql/
+      - ./logs/trino/:/opt/trino/logs/
     depends_on:
       - postgres
       - hms
-      - datanode
       - namenode
-      - hive
+      - datanode
       - airflow
     networks:
       dahbest:
@@ -27,14 +29,18 @@ services:
 
   dbt:
     container_name: dbt
+    hostname: dbt
     build:
       context: ./images/dbt
       dockerfile: Dockerfile
-    volumes:
-      - ./config/dbt/project:/dbt/project
-      - ./config/dbt/profiles:/dbt/profiles
     ports:
-      - "2223:22"
+      - "5050:5050"
+    volumes:
+      - ./configs/dbt/project:/opt/dbt/project
+      - ./configs/dbt/profiles:/opt/dbt/profiles
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./logs/dbt/:/opt/dbt/project/logs/
     depends_on:
       - trino
       - postgres
@@ -49,32 +55,39 @@ services:
       dockerfile: Dockerfile
       args:
         AIRFLOW_VERSION: ${AIRFLOW_VERSION}
+    environment:
+      AIRFLOW_USER: ${AIRFLOW_USER}
+      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "9090:8080"
+      - "9090:9090"
     volumes:
-      - ./config/airflow/configs/airflow.cfg:/root/airflow/airflow.cfg
-      - ./config/airflow/configs/webserver_config.py:/root/airflow/webserver_config.py
-      - ./config/airflow/configs/admin_password.json:/root/airflow/admin_password.json
-      - ./config/airflow/dags:/root/airflow/dags
-      - ./data_logs/airflow:/root/airflow/logs
+      - ./configs/airflow/configs/airflow.cfg.template:/opt/airflow/airflow.cfg.template
+      - ./configs/airflow/configs/webserver_config.py:/opt/airflow/webserver_config.py
+      - ./configs/airflow/configs/admin_password.json.template:/opt/airflow/auth/admin_password.json.template
+      - ./configs/airflow/dags/:/opt/airflow/dags
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./logs/airflow:/opt/airflow/logs
     depends_on:
       - postgres
     networks:
       dahbest:
-        ipv4_address: 172.80.0.11
+        ipv4_address: 172.80.0.75
 
   postgres:
     container_name: postgres
-    image: postgres:16
+    hostname: postgres
+    image: postgres:${POSTGRES_VERSION}
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: airflow_db
     ports:
       - '5432:5432'
     volumes:
-      - ./data_logs/postgres_data:/var/lib/postgresql/data
-      - ./config/postgres/query_init:/docker-entrypoint-initdb.d
+      - ./configs/postgres/:/docker-entrypoint-initdb.d/
+      - ./logs/postgres:/var/lib/postgresql/data
     networks:
       dahbest:
         ipv4_address: 172.80.0.10
@@ -85,16 +98,19 @@ services:
     build:
       context: ./images/hdfs
       dockerfile: Dockerfile
+      args:
+        - HADOOP_VERSION=${HADOOP_VERSION}
     ports:
       - "9870:9870"
-      - "9000:9000"
     volumes:
-      - ./data_logs/namenode:/opt/hadoop/dfs/name
-      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
-      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
+      - ./configs/hdfs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./configs/hdfs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./logs/hdfs/namenode:/opt/hadoop/logs/
     networks:
       dahbest:
-        ipv4_address: 172.80.0.33
+        ipv4_address: 172.80.0.31
+    depends_on:
+      - postgres
 
   datanode:
     container_name: datanode
@@ -102,12 +118,12 @@ services:
     build:
       context: ./images/hdfs
       dockerfile: Dockerfile
-    ports:
-      - "9864:9864"
+      args:
+        - HADOOP_VERSION=${HADOOP_VERSION}
     volumes:
-      - ./data_logs/datanode:/opt/hadoop/dfs/data
-      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
-      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
+      - ./configs/hdfs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./configs/hdfs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./logs/hdfs/datanode:/opt/hadoop/logs/
     networks:
       dahbest:
         ipv4_address: 172.80.0.32
@@ -120,44 +136,26 @@ services:
     build:
       context: ./images/hms
       dockerfile: Dockerfile
+      args:
+        - METASTORE_VERSION=${METASTORE_VERSION}
+        - HADOOP_VERSION=${HADOOP_VERSION}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - 9083:9083 
+      - 9083:9083
     volumes:
-      - ./config/hms/metastore-site.xml:/opt/apache-hive-metastore-3.1.3-bin/conf/metastore-site.xml
-      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
-      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
-      - ./data_logs/hms:/opt/apache-hive-metastore-3.1.3-bin/logs
+      - ./configs/hms/metastore-site.xml.template:/opt/hive-metastore/conf/metastore-site.xml.template
+      - ./configs/hdfs/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./configs/hdfs/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./logs/hms:/opt/hive-metastore/logs/
     networks:
       dahbest:
         ipv4_address: 172.80.0.30
-        aliases:
-          - hms.dahbest
-          - hms
     depends_on:
+      - postgres
       - namenode
       - datanode
-
-  hive:
-    container_name: hive
-    hostname: hive
-    build:
-      context: ./images/hive
-      dockerfile: Dockerfile
-    ports:
-      - "10000:10000"
-      - "10002:10002"
-    volumes:
-      - ./config/hive/hive-site.xml:/opt/apache-hive-3.1.3-bin/conf/hive-site.xml
-      - ./config/hdfs/core-site.xml:/opt/hadoop-3.4.1/etc/hadoop/core-site.xml
-      - ./config/hdfs/hdfs-site.xml:/opt/hadoop-3.4.1/etc/hadoop/hdfs-site.xml
-      - ./data_logs/hive:/opt/apache-hive-3.1.3-bin/logs
-    networks:
-      dahbest:
-        ipv4_address: 172.80.0.31
-    depends_on:
-      - namenode
-      - datanode
-      - hms
 
 networks:
   dahbest:

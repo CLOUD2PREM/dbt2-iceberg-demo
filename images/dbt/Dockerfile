@@ -1,13 +1,15 @@
 FROM python:3.12-slim
 
+ENV DBT_HOME=/opt/dbt
+ENV DBT_PROFILES_DIR=${DBT_HOME}/profiles
+ENV DBT_PROJECT_DIR=${DBT_HOME}/project
+
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     libicu-dev \
     less \
     openssh-server \
-    && mkdir -p /var/log \
-    && touch /var/log/auth.log \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -17,17 +19,20 @@ RUN echo "root:3541" | chpasswd \
     && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
     && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-ENV DBT_PROFILES_DIR=/dbt/profiles
+RUN mkdir ${DBT_HOME} && \
+    mkdir -p ${DBT_PROFILES_DIR} && \
+    mkdir -p ${DBT_PROJECT_DIR} && \
+    mkdir -p ${DBT_PROJECT_DIR}/logs
 
-WORKDIR /dbt
+WORKDIR ${DBT_HOME}
 
-# Install dbt-core and required adapters
 RUN pip install --no-cache-dir \
     dbt-core \
     dbt-trino \
-    dbt-postgres
+    keyring
 
-COPY init-sh/starter-dbt.sh /usr/local/bin/starter-dbt.sh
-RUN chmod +x /usr/local/bin/starter-dbt.sh
+COPY init-sh/dbt-starter.sh /usr/local/bin/dbt-starter.sh
 
-ENTRYPOINT ["/usr/local/bin/starter-dbt.sh"]
+RUN chmod +x /usr/local/bin/dbt-starter.sh
+
+CMD [ "dbt-starter.sh" ] 
