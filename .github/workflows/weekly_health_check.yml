@@ -32,7 +32,7 @@ jobs:
         run: docker-compose up -d --build
 
       - name: Wait for services to start
-        run: sleep 30
+        run: sleep 60
 
       - name: Trigger and unpause DAG
         run: |
