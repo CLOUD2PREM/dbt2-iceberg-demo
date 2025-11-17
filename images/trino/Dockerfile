@@ -1,4 +1,4 @@
-FROM openjdk:25-slim-bullseye
+FROM openjdk:25-ea-25-slim-bullseye
 
 ARG TRINO_VERSION=${TRINO_VERSION}
 

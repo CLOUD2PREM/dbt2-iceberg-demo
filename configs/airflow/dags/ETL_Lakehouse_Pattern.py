@@ -122,5 +122,4 @@ with TaskGroup("dbt_docs", dag=dag) as dbt_docs:
         dag=dag
     )
 
-# THIS MUST BE OUTSIDE ALL TaskGroup CONTEXTS
 dbt_seed_group >> dbt_pipeline >> quality_checks >> dbt_docs

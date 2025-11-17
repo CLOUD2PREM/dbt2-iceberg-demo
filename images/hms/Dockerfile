@@ -1,4 +1,4 @@
-FROM openjdk:17-slim-bullseye
+FROM openjdk:17.0.2-jdk-slim
 
 ARG HADOOP_VERSION=${HADOOP_VERSION}
 ARG METASTORE_VERSION=${METASTORE_VERSION}
@@ -14,7 +14,7 @@ ENV POSTGRES_USER=${POSTGRES_USER}
 ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 RUN apt-get update && \
-    apt-get install -y wget netcat procps gettext && \
+    apt-get install -y wget netcat-openbsd procps gettext && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt

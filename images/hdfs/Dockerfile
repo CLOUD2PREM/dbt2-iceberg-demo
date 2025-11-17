@@ -1,4 +1,4 @@
-FROM openjdk:17-slim-bullseye
+FROM openjdk:17.0.2-jdk-slim
 
 ARG HADOOP_VERSION=${HADOOP_VERSION}
 
