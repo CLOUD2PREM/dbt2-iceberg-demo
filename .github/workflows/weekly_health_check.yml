@@ -46,7 +46,7 @@ jobs:
           interval=10
           elapsed=0
           while [ $elapsed -lt $timeout ]; do
-            if docker-compose logs airflow | grep -q "INFO - TaskInstance Finished: dag_id=ETL_Lakehouse_Pattern, task_id=dbt_docs.dbt_docs_generate"; then
+            if docker compose logs | grep -i "INFO - TaskInstance Finished: dag_id=ETL_Lakehouse_Pattern, task_id=dbt_docs.dbt_docs_generate"; then
               echo "DAG completed successfully. Project is healthy."
               exit 0
             fi
